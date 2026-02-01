@@ -20,7 +20,7 @@ const MEMORY_PATH = process.env.MEMORY_PATH || `${homedir()}/.mcp/memory.md`;
 const SECTION_HEADERS: Record<SectionType, string> = {
   work: "## Work Context",
   personal: "## Personal Context",
-  top_of_mind: "## Top of Mind",
+  top_of_mind: "## Current Focus",
   history: "## Brief History",
   instructions: "## Other Instructions",
 };
@@ -66,11 +66,11 @@ function parseSections(body: string): Record<SectionType, string> {
     instructions: "",
   };
 
-  const sectionPattern = /^## (Work Context|Personal Context|Top of Mind|Brief History|Other Instructions)\n/gm;
+  const sectionPattern = /^## (Work Context|Personal Context|Current Focus|Brief History|Other Instructions)\n/gm;
   const headerToType: Record<string, SectionType> = {
     "Work Context": "work",
     "Personal Context": "personal",
-    "Top of Mind": "top_of_mind",
+    "Current Focus": "top_of_mind",
     "Brief History": "history",
     "Other Instructions": "instructions",
   };

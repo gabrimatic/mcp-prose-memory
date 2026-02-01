@@ -90,7 +90,7 @@ Professional context, projects, colleagues, tools.
 
 Location, preferences, interests, personal facts.
 
-## Top of Mind
+## Current Focus
 
 Current focuses, active tasks.
 
@@ -171,7 +171,7 @@ Quickly append a fact to a section as a bullet point. More efficient than `memor
 |---------|---------|
 | `work` | Professional context, projects, colleagues, tools |
 | `personal` | Location, preferences, interests, personal facts |
-| `top_of_mind` | Current focuses, active tasks |
+| `top_of_mind` | Current focus, active tasks |
 | `history` | Past events, completed work |
 | `instructions` | Standing rules, behavioral preferences |
 

@@ -1,6 +1,6 @@
 {
   "name": "mcp-prose-memory",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server for prose-based persistent memory with markdown storage",
   "license": "MIT",
   "type": "module",

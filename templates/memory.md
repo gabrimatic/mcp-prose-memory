@@ -7,7 +7,7 @@ updated:
 
 ## Personal Context
 
-## Top of Mind
+## Current Focus
 
 ## Brief History
 
