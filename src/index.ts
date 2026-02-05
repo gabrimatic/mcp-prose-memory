@@ -5,224 +5,183 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import {
-  loadDocument,
-  getSection,
-  updateSection,
-  getFullContext,
-  appendToSection,
-  type SectionType,
-} from "./store.js";
+import { MemoryStore } from "./store.js";
+
+const store = new MemoryStore();
 
 const server = new Server(
-  { name: "mcp-prose-memory", version: "1.0.0" },
+  { name: "mcp-prose-memory", version: "2.0.0" },
   { capabilities: { tools: {} } }
 );
 
-const SECTIONS = ["work", "personal", "top_of_mind", "history", "instructions"] as const;
-
+// Tool definitions - unified memory tool with commands
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
-      name: "memory_get",
-      description: "Get full memory document or a specific section. Use without params for full doc.",
+      name: "memory",
+      description: `Manage persistent memory across sessions.
+
+Commands:
+- view: Show all memories (optionally filter by section)
+- add: Add a new fact to a section
+- remove: Remove a fact by section and line number
+- replace: Update a fact by section and line number
+
+Sections: work, personal, top_of_mind, history, instructions
+
+Examples:
+- {"command": "view"}
+- {"command": "view", "section": "work"}
+- {"command": "add", "section": "personal", "fact": "Lives in Berlin"}
+- {"command": "remove", "section": "work", "line": 3}
+- {"command": "replace", "section": "top_of_mind", "line": 1, "fact": "Working on new project"}`,
       inputSchema: {
         type: "object",
         properties: {
+          command: {
+            type: "string",
+            enum: ["view", "add", "remove", "replace"],
+            description: "Operation to perform",
+          },
           section: {
             type: "string",
-            enum: SECTIONS,
-            description: "Optional: specific section to retrieve (work|personal|top_of_mind|history|instructions)",
+            enum: ["work", "personal", "top_of_mind", "history", "instructions"],
+            description: "Target section (required for add/remove/replace, optional for view)",
+          },
+          fact: {
+            type: "string",
+            maxLength: 300,
+            description: "For add/replace: the fact to store (max 300 chars)",
+          },
+          line: {
+            type: "number",
+            minimum: 1,
+            description: "For remove/replace: line number within section (1-indexed)",
           },
         },
-      },
-    },
-    {
-      name: "memory_update_section",
-      description: "Replace the content of a specific section. Content should be prose/markdown.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          section: {
-            type: "string",
-            enum: SECTIONS,
-            description: "Section to update: work|personal|top_of_mind|history|instructions",
-          },
-          content: {
-            type: "string",
-            description: "New content for the section (prose/markdown)",
-          },
-        },
-        required: ["section", "content"],
-      },
-    },
-    {
-      name: "memory_remember",
-      description: "Get current document with hint to integrate new info. Use when asked to 'remember' something.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          info: {
-            type: "string",
-            description: "The information to remember (for context)",
-          },
-        },
-        required: ["info"],
+        required: ["command"],
       },
     },
     {
       name: "memory_context",
-      description: "Get full memory document for session start. Returns the complete markdown file.",
-      inputSchema: {
-        type: "object",
-        properties: {},
-      },
-    },
-    {
-      name: "memory_quick_add",
-      description: "Quickly append a fact to a section. Use for simple 'remember X' requests. More efficient than memory_remember + memory_update_section.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          section: {
-            type: "string",
-            enum: SECTIONS,
-            description: "Section: work|personal|top_of_mind|history|instructions"
-          },
-          fact: {
-            type: "string",
-            description: "The fact to add (will be appended as a bullet point)"
-          }
-        },
-        required: ["section", "fact"]
-      }
+      description:
+        "Load full memory for session start. Called automatically by hooks.",
+      inputSchema: { type: "object", properties: {} },
     },
   ],
 }));
 
+// Tool execution
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
-    switch (name) {
-      case "memory_get": {
-        if (args?.section) {
-          const sectionType = args.section as SectionType;
-          if (!SECTIONS.includes(sectionType)) {
-            throw new Error(`Invalid section: ${sectionType}`);
-          }
-          const content = await getSection(sectionType);
+    if (name === "memory_context") {
+      const formatted = await store.getFormatted();
+      return { content: [{ type: "text", text: formatted }] };
+    }
+
+    if (name === "memory") {
+      const { command, section, fact, line } = args as {
+        command: "view" | "add" | "remove" | "replace";
+        section?: string;
+        fact?: string;
+        line?: number;
+      };
+
+      switch (command) {
+        case "view": {
+          const formatted = await store.getFormatted(section);
+          return { content: [{ type: "text", text: formatted }] };
+        }
+
+        case "add": {
+          if (!section) throw new Error("Section required for add");
+          if (!fact) throw new Error("Fact required for add");
+
+          const trimmed = fact.trim();
+          if (!trimmed) throw new Error("Fact cannot be empty or whitespace-only");
+
+          const result = await store.addFact(section, trimmed);
           return {
             content: [
               {
                 type: "text",
-                text: content || `(${sectionType} section is empty)`,
+                text: `✅ Added to ${sectionLabel(section)}:\n${result.line}. ${result.fact}`,
               },
             ],
           };
         }
-        const fullDoc = await getFullContext();
-        return {
-          content: [
-            {
-              type: "text",
-              text: fullDoc || "(No memory document exists yet)",
-            },
-          ],
-        };
-      }
 
-      case "memory_update_section": {
-        const sectionType = args?.section as SectionType;
-        const content = args?.content as string;
+        case "remove": {
+          if (!section) throw new Error("Section required for remove");
+          if (line === undefined) throw new Error("Line number required for remove");
 
-        if (!sectionType || !SECTIONS.includes(sectionType)) {
-          throw new Error(`Invalid section: ${sectionType}`);
-        }
-        if (!content) {
-          throw new Error("Content is required");
+          const removed = await store.removeFact(section, line);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `✅ Removed from ${sectionLabel(section)}:\n${removed}`,
+              },
+            ],
+          };
         }
 
-        const doc = await updateSection(sectionType, content);
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Updated ${sectionType} section. Document last updated: ${doc.metadata.updated}`,
-            },
-          ],
-        };
-      }
+        case "replace": {
+          if (!section) throw new Error("Section required for replace");
+          if (line === undefined) throw new Error("Line number required for replace");
+          if (!fact) throw new Error("Fact required for replace");
 
-      case "memory_remember": {
-        const info = args?.info as string;
-        if (!info) {
-          throw new Error("Info is required");
+          const trimmedFact = fact.trim();
+          if (!trimmedFact) throw new Error("Fact cannot be empty or whitespace-only");
+
+          const result = await store.replaceFact(section, line, trimmedFact);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `✅ Updated ${sectionLabel(section)} line ${line}:\n${result.old} → ${result.new}`,
+              },
+            ],
+          };
         }
 
-        const fullDoc = await getFullContext();
-        const hint = `
-To integrate this information into memory:
-
-1. Choose the appropriate section:
-   - work: professional context, projects, colleagues, tools
-   - personal: location, preferences, interests, personal facts
-   - top_of_mind: current focuses, active tasks
-   - history: past events, completed work
-   - instructions: standing rules, behavioral preferences
-
-2. Keep content concise and well-organized
-3. Use memory_update_section to save changes
-
-INFO TO REMEMBER: ${info}
-
-CURRENT DOCUMENT:
-${fullDoc || "(empty)"}`;
-
-        return { content: [{ type: "text", text: hint }] };
+        default:
+          throw new Error(`Unknown command: ${command}`);
       }
-
-      case "memory_context": {
-        const fullDoc = await getFullContext();
-        return {
-          content: [
-            {
-              type: "text",
-              text: fullDoc || "(No memory document exists yet)",
-            },
-          ],
-        };
-      }
-
-      case "memory_quick_add": {
-        const sectionType = args?.section as SectionType;
-        const fact = args?.fact as string;
-        if (!sectionType || !SECTIONS.includes(sectionType)) {
-          throw new Error(`Invalid section: ${sectionType}`);
-        }
-        if (!fact) {
-          throw new Error("Fact is required");
-        }
-        await appendToSection(sectionType, fact);
-        return {
-          content: [{ type: "text", text: `Added to ${sectionType}.` }]
-        };
-      }
-
-      default:
-        return { content: [{ type: "text", text: `Unknown tool: ${name}` }] };
     }
-  } catch (e: unknown) {
+
+    throw new Error(`Unknown tool: ${name}`);
+  } catch (error) {
+    // Return error as normal response - prevents sibling call cascade cancellation
     return {
       content: [
-        {
-          type: "text",
-          text: `Error: ${e instanceof Error ? e.message : e}`,
-        },
+        { type: "text", text: `❌ Error: ${(error as Error).message}` },
       ],
     };
   }
 });
 
-const transport = new StdioServerTransport();
-server.connect(transport).catch(console.error);
+function sectionLabel(key: string): string {
+  const labels: Record<string, string> = {
+    work: "Work Context",
+    personal: "Personal Context",
+    top_of_mind: "Top of Mind",
+    history: "Brief History",
+    instructions: "Other Instructions",
+  };
+  return labels[key] || key;
+}
+
+// Start server
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error("Memory MCP v2.0.0 running");
+}
+
+main().catch((err) => {
+  console.error("Fatal error:", err);
+  process.exit(1);
+});

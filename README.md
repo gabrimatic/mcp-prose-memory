@@ -1,13 +1,14 @@
 # mcp-prose-memory
 
-An MCP (Model Context Protocol) server for prose-based persistent memory with markdown storage. Enables LLMs to maintain context across sessions using a structured markdown file.
+An MCP (Model Context Protocol) server for persistent memory with JSON storage. Enables LLMs to maintain context across sessions using atomic fact operations.
 
 ## Features
 
-- Prose-based memory storage in markdown format
+- JSON-based memory storage for reliable parsing
+- Atomic fact operations (add, remove, replace)
 - Structured sections for organized context
-- YAML frontmatter for metadata
-- Simple tools for reading and updating memory
+- Duplicate detection (case-insensitive)
+- Limits: 30 facts per section, 300 chars per fact
 - Configurable storage location via environment variable
 
 ## Installation
@@ -56,7 +57,7 @@ Add to your Claude CLI configuration (`~/.claude/mcp-servers.json`):
 
 ### Custom Memory Location
 
-By default, memory is stored at `~/.mcp/memory.md`. Override with the `MEMORY_PATH` environment variable:
+By default, memory is stored at `~/.claude/memory.json`. Override with the `MEMORY_PATH` environment variable:
 
 ```json
 {
@@ -65,7 +66,7 @@ By default, memory is stored at `~/.mcp/memory.md`. Override with the `MEMORY_PA
       "command": "npx",
       "args": ["mcp-prose-memory"],
       "env": {
-        "MEMORY_PATH": "/path/to/your/memory.md"
+        "MEMORY_PATH": "/path/to/your/memory.json"
       }
     }
   }
@@ -74,95 +75,65 @@ By default, memory is stored at `~/.mcp/memory.md`. Override with the `MEMORY_PA
 
 ## Document Structure
 
-The memory document uses YAML frontmatter and markdown sections:
+The memory document uses JSON format with arrays of facts:
 
-```markdown
----
-version: 2
-updated: 2025-01-15T10:30:00.000Z
----
-
-## Work Context
-
-Professional context, projects, colleagues, tools.
-
-## Personal Context
-
-Location, preferences, interests, personal facts.
-
-## Current Focus
-
-Current focuses, active tasks.
-
-## Brief History
-
-Past events, completed work.
-
-## Other Instructions
-
-Standing rules, behavioral preferences.
+```json
+{
+  "version": 4,
+  "updated": "2025-01-15T10:30:00.000Z",
+  "sections": {
+    "work": ["Fact 1", "Fact 2"],
+    "personal": ["Lives in Berlin", "Prefers dark mode"],
+    "top_of_mind": [],
+    "history": ["Completed project X"],
+    "instructions": ["Be concise"]
+  }
+}
 ```
 
 ## Tools
 
-### memory_get
+### memory
 
-Get the full memory document or a specific section.
+Unified tool for all memory operations. Uses a `command` parameter to specify the action.
 
-**Parameters:**
-- `section` (optional): One of `work`, `personal`, `top_of_mind`, `history`, `instructions`
+**Commands:**
 
-**Example:**
+#### view
+Show all memories or filter by section.
+
 ```json
-{ "section": "work" }
+{"command": "view"}
+{"command": "view", "section": "work"}
 ```
 
-### memory_update_section
+#### add
+Add a new fact to a section.
 
-Replace the content of a specific section.
-
-**Parameters:**
-- `section` (required): Section to update
-- `content` (required): New content (prose/markdown)
-
-**Example:**
 ```json
-{
-  "section": "personal",
-  "content": "Based in Berlin, Germany. Prefers concise communication."
-}
+{"command": "add", "section": "personal", "fact": "Lives in Berlin"}
 ```
 
-### memory_remember
+#### remove
+Remove a fact by line number.
 
-Get the current document with guidance for integrating new information. Use this when asked to "remember" something.
-
-**Parameters:**
-- `info` (required): The information to remember
-
-**Example:**
 ```json
-{ "info": "User prefers dark mode" }
+{"command": "remove", "section": "work", "line": 3}
+```
+
+#### replace
+Update a fact by line number.
+
+```json
+{"command": "replace", "section": "top_of_mind", "line": 1, "fact": "Working on new project"}
 ```
 
 ### memory_context
 
-Get the full memory document for session initialization. Equivalent to `memory_get` without parameters.
+Get the full memory document for session initialization. Called automatically by hooks.
 
-### memory_quick_add
-
-Quickly append a fact to a section as a bullet point. More efficient than `memory_remember` + `memory_update_section` for simple facts.
-
-**Parameters:**
-- `section` (required): Section to append to
-- `fact` (required): The fact to add
-
-**Example:**
 ```json
-{
-  "section": "personal",
-  "fact": "Prefers tea over coffee"
-}
+{}
 ```
 
 ## Sections

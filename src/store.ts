@@ -1,183 +1,174 @@
 import { readFile, writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
 import { dirname } from "path";
-import { homedir } from "os";
 
-export type SectionType = "work" | "personal" | "top_of_mind" | "history" | "instructions";
+const MEMORY_PATH = process.env.MEMORY_PATH || `${process.env.HOME}/.claude/memory.json`;
 
-export interface DocumentMetadata {
+// Section definitions with display order
+const SECTIONS = {
+  work: "Work Context",
+  personal: "Personal Context",
+  top_of_mind: "Top of Mind",
+  history: "Brief History",
+  instructions: "Other Instructions",
+} as const;
+
+type SectionKey = keyof typeof SECTIONS;
+
+interface MemoryData {
   version: number;
   updated: string;
+  sections: Record<SectionKey, string[]>;
 }
 
-export interface MemoryDocument {
-  metadata: DocumentMetadata;
-  sections: Record<SectionType, string>;
-}
-
-const MEMORY_PATH = process.env.MEMORY_PATH || `${homedir()}/.mcp/memory.md`;
-
-const SECTION_HEADERS: Record<SectionType, string> = {
-  work: "## Work Context",
-  personal: "## Personal Context",
-  top_of_mind: "## Current Focus",
-  history: "## Brief History",
-  instructions: "## Other Instructions",
-};
-
-const SECTION_ORDER: SectionType[] = ["work", "personal", "top_of_mind", "history", "instructions"];
-
-async function ensureDir(path: string): Promise<void> {
-  const dir = dirname(path);
-  if (!existsSync(dir)) await mkdir(dir, { recursive: true });
-}
-
-function parseYamlFrontmatter(content: string): { metadata: DocumentMetadata; body: string } {
-  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-
-  if (!frontmatterMatch) {
-    return {
-      metadata: { version: 2, updated: new Date().toISOString() },
-      body: content,
-    };
-  }
-
-  const [, yaml, body] = frontmatterMatch;
-  const metadata: DocumentMetadata = { version: 2, updated: new Date().toISOString() };
-
-  for (const line of yaml.split("\n")) {
-    const match = line.match(/^(\w+):\s*(.+)$/);
-    if (match) {
-      const [, key, value] = match;
-      if (key === "version") metadata.version = parseInt(value, 10);
-      if (key === "updated") metadata.updated = value;
+export class MemoryStore {
+  private async load(): Promise<MemoryData> {
+    try {
+      const raw = await readFile(MEMORY_PATH, "utf-8");
+      return JSON.parse(raw);
+    } catch (err: unknown) {
+      const e = err as NodeJS.ErrnoException;
+      if (e.code === "ENOENT") {
+        // File doesn't exist - return empty structure
+        return {
+          version: 4,
+          updated: new Date().toISOString(),
+          sections: {
+            work: [],
+            personal: [],
+            top_of_mind: [],
+            history: [],
+            instructions: [],
+          },
+        };
+      }
+      // JSON parse error or other issue - don't silently wipe memory
+      throw new Error(`Failed to load memory: ${e.message}`);
     }
   }
 
-  return { metadata, body };
-}
+  // Note: Not thread-safe. Relies on MCP stdio transport being single-threaded.
+  private async save(data: MemoryData): Promise<void> {
+    data.updated = new Date().toISOString();
+    await mkdir(dirname(MEMORY_PATH), { recursive: true });
+    await writeFile(MEMORY_PATH, JSON.stringify(data, null, 2), "utf-8");
+  }
 
-function parseSections(body: string): Record<SectionType, string> {
-  const sections: Record<SectionType, string> = {
-    work: "",
-    personal: "",
-    top_of_mind: "",
-    history: "",
-    instructions: "",
-  };
+  /**
+   * Get formatted memory for display/injection
+   */
+  async getFormatted(sectionFilter?: string): Promise<string> {
+    const data = await this.load();
+    const lines: string[] = [];
 
-  const sectionPattern = /^## (Work Context|Personal Context|Current Focus|Brief History|Other Instructions)\n/gm;
-  const headerToType: Record<string, SectionType> = {
-    "Work Context": "work",
-    "Personal Context": "personal",
-    "Current Focus": "top_of_mind",
-    "Brief History": "history",
-    "Other Instructions": "instructions",
-  };
+    const sectionsToShow = sectionFilter
+      ? { [sectionFilter]: SECTIONS[sectionFilter as SectionKey] }
+      : SECTIONS;
 
-  const matches: Array<{ type: SectionType; start: number; headerEnd: number }> = [];
-  let match: RegExpExecArray | null;
+    for (const [key, label] of Object.entries(sectionsToShow)) {
+      const facts = data.sections[key as SectionKey] || [];
+      if (facts.length === 0) continue;
 
-  while ((match = sectionPattern.exec(body)) !== null) {
-    const type = headerToType[match[1]];
-    if (type) {
-      matches.push({
-        type,
-        start: match.index,
-        headerEnd: match.index + match[0].length,
+      lines.push(`**${label}**\n`);
+      facts.forEach((fact, i) => {
+        lines.push(`${i + 1}. ${fact}`);
       });
+      lines.push(""); // blank line between sections
+    }
+
+    if (lines.length === 0) {
+      return sectionFilter
+        ? `No facts in ${SECTIONS[sectionFilter as SectionKey] || sectionFilter}`
+        : "No memories stored yet.";
+    }
+
+    return lines.join("\n").trim();
+  }
+
+  /**
+   * Add a fact to a section
+   */
+  async addFact(
+    section: string,
+    fact: string
+  ): Promise<{ line: number; fact: string }> {
+    this.validateSection(section);
+
+    if (fact.length > 300) {
+      throw new Error(`Fact too long (${fact.length} chars). Max 300.`);
+    }
+
+    const data = await this.load();
+    const facts = data.sections[section as SectionKey];
+
+    // Check for duplicates (case-insensitive)
+    const normalized = fact.toLowerCase();
+    if (facts.some((f) => f.toLowerCase() === normalized)) {
+      throw new Error("Duplicate fact already exists");
+    }
+
+    // Limit per section (30 facts max)
+    if (facts.length >= 30) {
+      throw new Error(`Section "${section}" is full (max 30 facts). Remove old facts first.`);
+    }
+
+    facts.push(fact);
+    await this.save(data);
+
+    return { line: facts.length, fact };
+  }
+
+  /**
+   * Remove a fact by line number
+   */
+  async removeFact(section: string, line: number): Promise<string> {
+    this.validateSection(section);
+
+    const data = await this.load();
+    const facts = data.sections[section as SectionKey];
+
+    if (line < 1 || line > facts.length) {
+      throw new Error(`Invalid line ${line}. Section has ${facts.length} facts.`);
+    }
+
+    const [removed] = facts.splice(line - 1, 1);
+    await this.save(data);
+
+    return removed;
+  }
+
+  /**
+   * Replace a fact by line number
+   */
+  async replaceFact(
+    section: string,
+    line: number,
+    newFact: string
+  ): Promise<{ old: string; new: string }> {
+    this.validateSection(section);
+
+    if (newFact.length > 300) {
+      throw new Error(`Fact too long (${newFact.length} chars). Max 300.`);
+    }
+
+    const data = await this.load();
+    const facts = data.sections[section as SectionKey];
+
+    if (line < 1 || line > facts.length) {
+      throw new Error(`Invalid line ${line}. Section has ${facts.length} facts.`);
+    }
+
+    const old = facts[line - 1];
+    facts[line - 1] = newFact;
+    await this.save(data);
+
+    return { old, new: newFact };
+  }
+
+  private validateSection(section: string): void {
+    if (!(section in SECTIONS)) {
+      throw new Error(
+        `Invalid section "${section}". Valid: ${Object.keys(SECTIONS).join(", ")}`
+      );
     }
   }
-
-  for (let i = 0; i < matches.length; i++) {
-    const current = matches[i];
-    const nextStart = matches[i + 1]?.start ?? body.length;
-    const content = body.slice(current.headerEnd, nextStart).trim();
-    sections[current.type] = content;
-  }
-
-  return sections;
 }
-
-function serializeDocument(doc: MemoryDocument): string {
-  const lines: string[] = [
-    "---",
-    `version: ${doc.metadata.version}`,
-    `updated: ${doc.metadata.updated}`,
-    "---",
-    "",
-  ];
-
-  for (const sectionType of SECTION_ORDER) {
-    lines.push(SECTION_HEADERS[sectionType]);
-    lines.push("");
-    const content = doc.sections[sectionType];
-    if (content) {
-      lines.push(content);
-      lines.push("");
-    }
-  }
-
-  return lines.join("\n");
-}
-
-export async function loadDocument(): Promise<MemoryDocument> {
-  try {
-    const content = await readFile(MEMORY_PATH, "utf-8");
-    const { metadata, body } = parseYamlFrontmatter(content);
-    const sections = parseSections(body);
-    return { metadata, sections };
-  } catch (e) {
-    if ((e as NodeJS.ErrnoException).code === "ENOENT") {
-      return {
-        metadata: { version: 2, updated: new Date().toISOString() },
-        sections: {
-          work: "",
-          personal: "",
-          top_of_mind: "",
-          history: "",
-          instructions: "",
-        },
-      };
-    }
-    throw e;
-  }
-}
-
-export async function saveDocument(doc: MemoryDocument): Promise<void> {
-  doc.metadata.updated = new Date().toISOString();
-  await ensureDir(MEMORY_PATH);
-  await writeFile(MEMORY_PATH, serializeDocument(doc));
-}
-
-export async function getSection(sectionType: SectionType): Promise<string> {
-  const doc = await loadDocument();
-  return doc.sections[sectionType];
-}
-
-export async function updateSection(sectionType: SectionType, content: string): Promise<MemoryDocument> {
-  const doc = await loadDocument();
-  doc.sections[sectionType] = content.trim();
-  await saveDocument(doc);
-  return doc;
-}
-
-export async function getFullContext(): Promise<string> {
-  try {
-    return await readFile(MEMORY_PATH, "utf-8");
-  } catch (e) {
-    if ((e as NodeJS.ErrnoException).code === "ENOENT") {
-      return "";
-    }
-    throw e;
-  }
-}
-
-export async function appendToSection(sectionType: SectionType, fact: string): Promise<void> {
-  const doc = await loadDocument();
-  const existing = doc.sections[sectionType].trim();
-  doc.sections[sectionType] = existing ? `${existing}\n- ${fact.trim()}` : `- ${fact.trim()}`;
-  await saveDocument(doc);
-}
-
-export { MEMORY_PATH, SECTION_ORDER, SECTION_HEADERS };

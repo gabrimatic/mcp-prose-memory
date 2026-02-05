@@ -1,7 +1,7 @@
 {
   "name": "mcp-prose-memory",
-  "version": "1.0.1",
-  "description": "MCP server for prose-based persistent memory with markdown storage",
+  "version": "2.0.0",
+  "description": "MCP server for persistent memory with JSON storage and atomic fact operations",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
@@ -34,7 +34,8 @@
     "memory",
     "claude",
     "ai",
-    "markdown"
+    "json",
+    "persistent"
   ],
   "author": "Soroush (https://gabrimatic.info)",
   "repository": {
