@@ -1,15 +1,15 @@
 # mcp-prose-memory
 
-An MCP (Model Context Protocol) server for persistent memory with JSON storage. Enables LLMs to maintain context across sessions using atomic fact operations.
+An MCP (Model Context Protocol) server for persistent memory with JSON storage. Lets an LLM keep context across sessions through atomic fact operations.
 
 ## Features
 
-- JSON-based memory storage for reliable parsing
-- Atomic fact operations (add, remove, replace)
-- Structured sections for organized context
-- Duplicate detection (case-insensitive)
+- JSON memory storage for reliable parsing
+- Atomic fact operations: add, remove, replace
+- Sectioned context organization
+- Case-insensitive duplicate detection
 - Limits: 30 facts per section, 300 chars per fact
-- Configurable storage location via environment variable
+- Configurable storage path via environment variable
 
 ## Installation
 
@@ -17,7 +17,7 @@ An MCP (Model Context Protocol) server for persistent memory with JSON storage. 
 npm install -g mcp-prose-memory
 ```
 
-Or use directly with npx:
+Or run with npx:
 
 ```bash
 npx mcp-prose-memory
@@ -27,7 +27,7 @@ npx mcp-prose-memory
 
 ### Claude Desktop
 
-Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
 ```json
 {
@@ -42,7 +42,7 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
 
 ### Claude CLI
 
-Add to your Claude CLI configuration (`~/.claude/mcp-servers.json`):
+Add to `~/.claude/mcp-servers.json`:
 
 ```json
 {
@@ -57,7 +57,7 @@ Add to your Claude CLI configuration (`~/.claude/mcp-servers.json`):
 
 ### Custom Memory Location
 
-By default, memory is stored at `~/.claude/memory.json`. Override with the `MEMORY_PATH` environment variable:
+Default storage is `~/.claude/memory.json`. Override with the `MEMORY_PATH` environment variable:
 
 ```json
 {
@@ -75,7 +75,7 @@ By default, memory is stored at `~/.claude/memory.json`. Override with the `MEMO
 
 ## Document Structure
 
-The memory document uses JSON format with arrays of facts:
+JSON format with arrays of facts per section:
 
 ```json
 {
@@ -95,7 +95,7 @@ The memory document uses JSON format with arrays of facts:
 
 ### memory
 
-Unified tool for all memory operations. Uses a `command` parameter to specify the action.
+Single tool for all memory operations. The `command` parameter selects the action.
 
 **Commands:**
 
@@ -108,7 +108,7 @@ Show all memories or filter by section.
 ```
 
 #### add
-Add a new fact to a section.
+Add a fact to a section.
 
 ```json
 {"command": "add", "section": "personal", "fact": "Lives in Berlin"}
@@ -130,7 +130,7 @@ Update a fact by line number.
 
 ### memory_context
 
-Get the full memory document for session initialization. Called automatically by hooks.
+Returns the full memory document for session initialization. Called automatically by hooks.
 
 ```json
 {}
