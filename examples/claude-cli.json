@@ -4,7 +4,7 @@
       "command": "npx",
       "args": ["mcp-prose-memory"],
       "env": {
-        "MEMORY_PATH": "/path/to/custom/memory.md"
+        "MEMORY_PATH": "/path/to/custom/memory.json"
       }
     }
   }

@@ -1,14 +1,21 @@
 # mcp-prose-memory
 
-An MCP (Model Context Protocol) server for persistent memory with JSON storage. Lets an LLM keep context across sessions through atomic fact operations.
+Persistent memory for MCP clients.
+
+`mcp-prose-memory` gives an agent a small, durable place to keep facts across sessions. It stores memory as JSON, keeps facts grouped by section, and exposes one tool for careful add, remove, replace, and view operations.
+
+It is built for memory that should survive restarts without becoming a loose text file that slowly drifts out of shape.
 
 ## Features
 
-- JSON memory storage for reliable parsing
-- Atomic fact operations: add, remove, replace
+- JSON memory storage with a stable schema
+- Atomic writes through temp-file replacement
+- Atomic fact operations: add, remove, replace, view
 - Sectioned context organization
 - Case-insensitive duplicate detection
-- Limits: 30 facts per section, 300 chars per fact
+- Strict line-number validation for remove and replace
+- Automatic normalization for older or partial JSON documents
+- Limits: 30 facts per section, 300 characters per fact
 - Configurable storage path via environment variable
 
 ## Installation
@@ -25,9 +32,11 @@ npx mcp-prose-memory
 
 ## Configuration
 
-### Claude Desktop
+Default storage is `~/.mcp-prose-memory/memory.json`. Override it with `MEMORY_PATH`.
 
-Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+### Desktop Client
+
+Add a server entry like this to your MCP client config:
 
 ```json
 {
@@ -40,9 +49,9 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 }
 ```
 
-### Claude CLI
+### CLI Client
 
-Add to `~/.claude/mcp-servers.json`:
+Add a server entry like this to your CLI MCP config:
 
 ```json
 {
@@ -56,8 +65,6 @@ Add to `~/.claude/mcp-servers.json`:
 ```
 
 ### Custom Memory Location
-
-Default storage is `~/.claude/memory.json`. Override with the `MEMORY_PATH` environment variable:
 
 ```json
 {
@@ -73,9 +80,9 @@ Default storage is `~/.claude/memory.json`. Override with the `MEMORY_PATH` envi
 }
 ```
 
-## Document Structure
+## Memory File
 
-JSON format with arrays of facts per section:
+The memory file is JSON with arrays of facts per section:
 
 ```json
 {
@@ -91,6 +98,8 @@ JSON format with arrays of facts per section:
 }
 ```
 
+If the file does not exist, the server starts with an empty document. If the file is invalid JSON, the server fails the operation instead of wiping memory.
+
 ## Tools
 
 ### memory
@@ -100,6 +109,7 @@ Single tool for all memory operations. The `command` parameter selects the actio
 **Commands:**
 
 #### view
+
 Show all memories or filter by section.
 
 ```json
@@ -108,6 +118,7 @@ Show all memories or filter by section.
 ```
 
 #### add
+
 Add a fact to a section.
 
 ```json
@@ -115,6 +126,7 @@ Add a fact to a section.
 ```
 
 #### remove
+
 Remove a fact by line number.
 
 ```json
@@ -122,6 +134,7 @@ Remove a fact by line number.
 ```
 
 #### replace
+
 Update a fact by line number.
 
 ```json
@@ -151,9 +164,14 @@ Returns the full memory document for session initialization. Called automaticall
 ```bash
 git clone https://github.com/gabrimatic/mcp-prose-memory.git
 cd mcp-prose-memory
-npm install
-npm run build
+npm ci
+npm test
+npm run check
 ```
+
+`npm test` builds the TypeScript source and runs store-level plus real MCP stdio smoke tests. `npm run check` also runs a production dependency audit and verifies the npm package contents with `npm pack --dry-run`.
+
+`prepublishOnly` runs the same check before publishing.
 
 ## Developer
 

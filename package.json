@@ -1,6 +1,6 @@
 {
   "name": "mcp-prose-memory",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "MCP server for persistent memory with JSON storage and atomic fact operations",
   "license": "MIT",
   "type": "module",
@@ -16,14 +16,18 @@
   ],
   "scripts": {
     "build": "tsc",
-    "prepare": "npm run build"
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "audit:prod": "npm audit --omit=dev",
+    "check": "npm run test && npm run audit:prod && npm pack --dry-run",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run check"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "@modelcontextprotocol/sdk": "^1.29.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.6.0"
+    "@types/node": "^22.19.19",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -32,8 +36,6 @@
     "mcp",
     "model-context-protocol",
     "memory",
-    "claude",
-    "ai",
     "json",
     "persistent"
   ],

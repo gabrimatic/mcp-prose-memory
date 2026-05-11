@@ -5,14 +5,26 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { MemoryStore } from "./store.js";
+import { MemoryStore, SECTIONS } from "./store.js";
 
 const store = new MemoryStore();
+const SERVER_VERSION = "3.0.0";
 
 const server = new Server(
-  { name: "mcp-prose-memory", version: "2.0.0" },
+  { name: "mcp-prose-memory", version: SERVER_VERSION },
   { capabilities: { tools: {} } }
 );
+
+const COMMANDS = ["view", "add", "remove", "replace"] as const;
+
+type MemoryCommand = (typeof COMMANDS)[number];
+
+interface MemoryArgs {
+  command?: unknown;
+  section?: unknown;
+  fact?: unknown;
+  line?: unknown;
+}
 
 // Tool definitions - unified memory tool with commands
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -54,19 +66,23 @@ Examples:
             description: "For add/replace: the fact to store (max 300 chars)",
           },
           line: {
-            type: "number",
+            type: "integer",
             minimum: 1,
             description: "For remove/replace: line number within section (1-indexed)",
           },
         },
         required: ["command"],
+        additionalProperties: false,
       },
     },
     {
       name: "memory_context",
       description:
         "Load full memory for session start. Called automatically by hooks.",
-      inputSchema: { type: "object", properties: {} },
+      inputSchema: { type: "object", properties: {}, additionalProperties: false },
+      annotations: {
+        readOnlyHint: true,
+      },
     },
   ],
 }));
@@ -82,27 +98,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     if (name === "memory") {
-      const { command, section, fact, line } = args as {
-        command: "view" | "add" | "remove" | "replace";
-        section?: string;
-        fact?: string;
-        line?: number;
-      };
+      const input = normalizeArgs(args);
+      const command = requireCommand(input.command);
 
       switch (command) {
         case "view": {
+          const section = optionalString(input.section, "Section");
           const formatted = await store.getFormatted(section);
           return { content: [{ type: "text", text: formatted }] };
         }
 
         case "add": {
-          if (!section) throw new Error("Section required for add");
-          if (!fact) throw new Error("Fact required for add");
+          const section = requireString(input.section, "Section");
+          const fact = requireString(input.fact, "Fact");
 
-          const trimmed = fact.trim();
-          if (!trimmed) throw new Error("Fact cannot be empty or whitespace-only");
-
-          const result = await store.addFact(section, trimmed);
+          const result = await store.addFact(section, fact);
           return {
             content: [
               {
@@ -114,8 +124,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         case "remove": {
-          if (!section) throw new Error("Section required for remove");
-          if (line === undefined) throw new Error("Line number required for remove");
+          const section = requireString(input.section, "Section");
+          const line = requireNumber(input.line, "Line number");
 
           const removed = await store.removeFact(section, line);
           return {
@@ -129,14 +139,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         case "replace": {
-          if (!section) throw new Error("Section required for replace");
-          if (line === undefined) throw new Error("Line number required for replace");
-          if (!fact) throw new Error("Fact required for replace");
+          const section = requireString(input.section, "Section");
+          const line = requireNumber(input.line, "Line number");
+          const fact = requireString(input.fact, "Fact");
 
-          const trimmedFact = fact.trim();
-          if (!trimmedFact) throw new Error("Fact cannot be empty or whitespace-only");
-
-          const result = await store.replaceFact(section, line, trimmedFact);
+          const result = await store.replaceFact(section, line, fact);
           return {
             content: [
               {
@@ -164,21 +171,51 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 function sectionLabel(key: string): string {
-  const labels: Record<string, string> = {
-    work: "Work Context",
-    personal: "Personal Context",
-    top_of_mind: "Top of Mind",
-    history: "Brief History",
-    instructions: "Other Instructions",
-  };
-  return labels[key] || key;
+  return SECTIONS[key as keyof typeof SECTIONS] || key;
+}
+
+function normalizeArgs(args: unknown): MemoryArgs {
+  if (!args || typeof args !== "object" || Array.isArray(args)) {
+    throw new Error("Tool arguments must be an object.");
+  }
+
+  return args as MemoryArgs;
+}
+
+function requireCommand(value: unknown): MemoryCommand {
+  if (typeof value !== "string" || !COMMANDS.includes(value as MemoryCommand)) {
+    throw new Error(`Command must be one of: ${COMMANDS.join(", ")}.`);
+  }
+
+  return value as MemoryCommand;
+}
+
+function optionalString(value: unknown, label: string): string | undefined {
+  if (value === undefined) return undefined;
+  return requireString(value, label);
+}
+
+function requireString(value: unknown, label: string): string {
+  if (typeof value !== "string") {
+    throw new Error(`${label} must be a string.`);
+  }
+
+  return value;
+}
+
+function requireNumber(value: unknown, label: string): number {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    throw new Error(`${label} must be a number.`);
+  }
+
+  return value;
 }
 
 // Start server
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Memory MCP v2.0.0 running");
+  console.error(`Memory MCP v${SERVER_VERSION} running`);
 }
 
 main().catch((err) => {
