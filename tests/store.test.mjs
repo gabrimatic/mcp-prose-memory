@@ -115,6 +115,18 @@ test("rejects fractional line numbers without mutating memory", async (t) => {
   );
 });
 
+test("rejects inherited object property names as sections", async (t) => {
+  const { memoryPath, cleanup } = await tempMemoryPath();
+  t.after(cleanup);
+
+  const store = new MemoryStore({ memoryPath });
+
+  await assert.rejects(
+    () => store.addFact("toString", "Should not be accepted"),
+    /Invalid section "toString"/
+  );
+});
+
 test("rejects duplicate facts when replacing", async (t) => {
   const { memoryPath, cleanup } = await tempMemoryPath();
   t.after(cleanup);

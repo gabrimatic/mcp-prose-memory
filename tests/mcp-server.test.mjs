@@ -92,3 +92,17 @@ test("runs a real MCP add, view, invalid remove, and context flow", async (t) =>
   const saved = JSON.parse(await readFile(memoryPath, "utf-8"));
   assert.equal(saved.sections.work[0], "MCP smoke test fact");
 });
+
+test("rejects extra tool arguments at runtime", async (t) => {
+  const { client } = await withClient(t);
+
+  const result = await client.callTool({
+    name: "memory",
+    arguments: {
+      command: "view",
+      unexpected: true,
+    },
+  });
+
+  assert.match(textContent(result), /Error: Unknown argument: unexpected/);
+});

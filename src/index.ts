@@ -16,6 +16,7 @@ const server = new Server(
 );
 
 const COMMANDS = ["view", "add", "remove", "replace"] as const;
+const MEMORY_ARGUMENTS = new Set(["command", "section", "fact", "line"]);
 
 type MemoryCommand = (typeof COMMANDS)[number];
 
@@ -177,6 +178,12 @@ function sectionLabel(key: string): string {
 function normalizeArgs(args: unknown): MemoryArgs {
   if (!args || typeof args !== "object" || Array.isArray(args)) {
     throw new Error("Tool arguments must be an object.");
+  }
+
+  for (const key of Object.keys(args)) {
+    if (!MEMORY_ARGUMENTS.has(key)) {
+      throw new Error(`Unknown argument: ${key}.`);
+    }
   }
 
   return args as MemoryArgs;

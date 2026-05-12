@@ -34,6 +34,8 @@ npx mcp-prose-memory
 
 Default storage is `~/.mcp-prose-memory/memory.json`. Override it with `MEMORY_PATH`.
 
+If you used an older release with a client-specific default memory location, either move that JSON file to the new default path or set `MEMORY_PATH` to the existing file.
+
 ### Desktop Client
 
 Add a server entry like this to your MCP client config:

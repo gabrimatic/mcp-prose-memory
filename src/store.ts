@@ -193,7 +193,7 @@ export class MemoryStore {
   }
 
   private validateSection(section: string): void {
-    if (!(section in SECTIONS)) {
+    if (!Object.hasOwn(SECTIONS, section)) {
       throw new Error(
         `Invalid section "${section}". Valid: ${Object.keys(SECTIONS).join(", ")}`
       );
