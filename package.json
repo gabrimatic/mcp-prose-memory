@@ -42,7 +42,7 @@
   "author": "Soroush (https://gabrimatic.info)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gabrimatic/mcp-prose-memory.git"
+    "url": "git+https://github.com/gabrimatic/mcp-prose-memory.git"
   },
   "bugs": {
     "url": "https://github.com/gabrimatic/mcp-prose-memory/issues"
