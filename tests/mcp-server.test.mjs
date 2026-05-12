@@ -106,3 +106,19 @@ test("rejects extra tool arguments at runtime", async (t) => {
 
   assert.match(textContent(result), /Error: Unknown argument: unexpected/);
 });
+
+test("rejects extra memory_context arguments at runtime", async (t) => {
+  const { client } = await withClient(t);
+
+  const result = await client.callTool({
+    name: "memory_context",
+    arguments: {
+      unexpected: true,
+    },
+  });
+
+  assert.match(
+    textContent(result),
+    /Error: Unknown argument for memory_context: unexpected/
+  );
+});

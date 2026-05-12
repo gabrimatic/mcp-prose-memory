@@ -94,6 +94,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     if (name === "memory_context") {
+      requireNoArgs(args, "memory_context");
       const formatted = await store.getFormatted();
       return { content: [{ type: "text", text: formatted }] };
     }
@@ -187,6 +188,19 @@ function normalizeArgs(args: unknown): MemoryArgs {
   }
 
   return args as MemoryArgs;
+}
+
+function requireNoArgs(args: unknown, toolName: string): void {
+  if (args === undefined || args === null) return;
+
+  if (typeof args !== "object" || Array.isArray(args)) {
+    throw new Error(`${toolName} arguments must be an object.`);
+  }
+
+  const [firstKey] = Object.keys(args);
+  if (firstKey) {
+    throw new Error(`Unknown argument for ${toolName}: ${firstKey}.`);
+  }
 }
 
 function requireCommand(value: unknown): MemoryCommand {
