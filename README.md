@@ -1,10 +1,16 @@
 # mcp-prose-memory
 
+[![CI](https://github.com/gabrimatic/mcp-prose-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/gabrimatic/mcp-prose-memory/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/mcp-prose-memory)](https://www.npmjs.com/package/mcp-prose-memory)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Persistent memory for MCP clients.
 
 `mcp-prose-memory` gives an agent a small, durable place to keep facts across sessions. It stores memory as JSON, keeps facts grouped by section, and exposes one tool for careful add, remove, replace, and view operations.
 
 It is built for memory that should survive restarts without becoming a loose text file that slowly drifts out of shape.
+
+Changelog · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
 
 ## Features
 
@@ -19,6 +25,8 @@ It is built for memory that should survive restarts without becoming a loose tex
 - Configurable storage path via environment variable
 
 ## Installation
+
+Runtime: **Node >= 18**.
 
 ```bash
 npm install -g mcp-prose-memory
@@ -174,6 +182,13 @@ npm run check
 `npm test` builds the TypeScript source and runs store-level plus real MCP stdio smoke tests. `npm run check` also runs a production dependency audit and verifies the npm package contents with `npm pack --dry-run`.
 
 `prepublishOnly` runs the same check before publishing.
+
+## Project Support
+
+- Changes: [CHANGELOG.md](CHANGELOG.md)
+- Contributions: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Security reports: [SECURITY.md](SECURITY.md)
+- Issues: [GitHub Issues](https://github.com/gabrimatic/mcp-prose-memory/issues)
 
 ## Developer
 
