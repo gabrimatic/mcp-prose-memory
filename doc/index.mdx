@@ -1,0 +1,34 @@
+---
+title: "mcp-prose-memory"
+description: "Persistent JSON memory for MCP clients."
+---
+
+`mcp-prose-memory` gives MCP clients a small, durable memory store for facts that should survive restarts.
+
+It stores memory as JSON, keeps facts grouped by section, and exposes one tool for careful add, remove, replace, and view operations. The shape stays predictable enough for automation, while remaining simple enough to inspect and repair by hand when needed.
+
+## What it does
+
+- Stores memory in a local JSON file
+- Groups facts into stable sections
+- Writes atomically through temp-file replacement
+- Rejects duplicate facts within a section
+- Validates line numbers before remove and replace operations
+- Normalizes older or partial memory documents
+- Exposes a full memory context tool for session startup hooks
+
+## When to use it
+
+Use it when an MCP client needs persistent prose memory without taking a dependency on a database, cloud service, or loose append-only notes file.
+
+It works best for short durable facts: project context, standing preferences, current focus, completed history, and other instructions.
+
+## Limits
+
+Each section can hold up to 30 facts. Each fact can be up to 300 characters.
+
+Those limits are intentional. They keep the memory useful as compact context rather than turning it into an unbounded journal.
+
+## Next
+
+Start with the [quickstart](/quickstart) to install the server and add it to an MCP client.

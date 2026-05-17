@@ -1,0 +1,34 @@
+---
+title: "Development"
+description: "Build, test, and verify the package locally."
+---
+
+## Install dependencies
+
+```bash
+npm ci
+```
+
+## Run tests
+
+```bash
+npm test
+```
+
+The test command builds the TypeScript source and runs store-level tests plus real MCP stdio smoke tests.
+
+## Run the full package check
+
+```bash
+npm run check
+```
+
+The check command runs tests, a production dependency audit, and `npm pack --dry-run` to verify package contents.
+
+## Publish guard
+
+`prepublishOnly` runs the same package check before publishing.
+
+## Repository
+
+Source code is available on [GitHub](https://github.com/gabrimatic/mcp-prose-memory).

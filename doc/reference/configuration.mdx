@@ -1,0 +1,53 @@
+---
+title: "Configuration"
+description: "Storage path, client config, and migration notes."
+---
+
+## Storage path
+
+Default storage path:
+
+```text
+~/.mcp-prose-memory/memory.json
+```
+
+Override it with `MEMORY_PATH`:
+
+```bash
+MEMORY_PATH=/path/to/memory.json npx mcp-prose-memory
+```
+
+## MCP client config
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "npx",
+      "args": ["mcp-prose-memory"]
+    }
+  }
+}
+```
+
+With a custom memory file:
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "npx",
+      "args": ["mcp-prose-memory"],
+      "env": {
+        "MEMORY_PATH": "/path/to/your/memory.json"
+      }
+    }
+  }
+}
+```
+
+## Migrating older memory files
+
+If an older release used a client-specific default memory location, move that JSON file to the default path or set `MEMORY_PATH` to the existing file.
+
+The server normalizes older documents with missing known sections, but it will not recover invalid JSON automatically. Fix invalid JSON by hand before starting the server.

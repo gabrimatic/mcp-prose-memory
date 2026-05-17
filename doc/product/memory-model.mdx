@@ -1,0 +1,48 @@
+---
+title: "Memory model"
+description: "Sections, schema, normalization, and limits."
+---
+
+The memory file is a JSON document with a version, update timestamp, and sectioned arrays of facts.
+
+```json
+{
+  "version": 4,
+  "updated": "2025-01-15T10:30:00.000Z",
+  "sections": {
+    "work": ["Fact 1", "Fact 2"],
+    "personal": ["Lives in Berlin"],
+    "top_of_mind": [],
+    "history": ["Completed project X"],
+    "instructions": ["Be concise"]
+  }
+}
+```
+
+## Sections
+
+| Section | Purpose |
+| --- | --- |
+| `work` | Professional context, projects, colleagues, tools |
+| `personal` | Location, preferences, interests, personal facts |
+| `top_of_mind` | Current focus and active tasks |
+| `history` | Past events and completed work |
+| `instructions` | Standing rules and behavioral preferences |
+
+## Limits
+
+| Limit | Value |
+| --- | --- |
+| Facts per section | 30 |
+| Characters per fact | 300 |
+
+## Normalization
+
+Older or partial documents are normalized when loaded:
+
+- Missing known sections are added as empty arrays
+- Facts are trimmed
+- A missing `updated` timestamp is replaced with the current time
+- Unknown sections are ignored by the active schema
+
+The schema is intentionally narrow so context stays predictable across clients and restarts.

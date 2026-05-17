@@ -1,0 +1,62 @@
+---
+title: "Tools"
+description: "MCP tools exposed by mcp-prose-memory."
+---
+
+## `memory`
+
+The `memory` tool performs all user-facing memory operations. The required `command` parameter selects the action.
+
+### `view`
+
+Show all memory, or filter by section.
+
+```json
+{"command": "view"}
+```
+
+```json
+{"command": "view", "section": "work"}
+```
+
+### `add`
+
+Add a fact to a section.
+
+```json
+{"command": "add", "section": "personal", "fact": "Lives in Berlin"}
+```
+
+### `remove`
+
+Remove a fact by its one-indexed line number within a section.
+
+```json
+{"command": "remove", "section": "work", "line": 3}
+```
+
+### `replace`
+
+Replace a fact by its one-indexed line number within a section.
+
+```json
+{"command": "replace", "section": "top_of_mind", "line": 1, "fact": "Working on new project"}
+```
+
+## `memory_context`
+
+The `memory_context` tool returns the full formatted memory document. It is intended for session initialization hooks.
+
+```json
+{}
+```
+
+## Sections
+
+The valid section keys are:
+
+- `work`
+- `personal`
+- `top_of_mind`
+- `history`
+- `instructions`

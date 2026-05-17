@@ -2,7 +2,17 @@ name: CI
 
 on:
   push:
+    paths-ignore:
+      - "doc/**"
+      - "README.md"
+      - ".github/workflows/docs-pages.yml"
+      - "tests/docs-site.test.mjs"
   pull_request:
+    paths-ignore:
+      - "doc/**"
+      - "README.md"
+      - ".github/workflows/docs-pages.yml"
+      - "tests/docs-site.test.mjs"
 
 jobs:
   check:

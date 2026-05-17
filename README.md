@@ -10,7 +10,7 @@ Persistent memory for MCP clients.
 
 It is built for memory that should survive restarts without becoming a loose text file that slowly drifts out of shape.
 
-Changelog · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
+[Docs](https://gabrimatic.github.io/mcp-prose-memory/) · Changelog · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
 
 ## Features
 
@@ -26,6 +26,8 @@ Changelog · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
 
 ## Installation
 
+Full setup guide: [Docs](https://gabrimatic.github.io/mcp-prose-memory/quickstart/).
+
 Runtime: **Node >= 18**.
 
 ```bash
@@ -39,6 +41,8 @@ npx mcp-prose-memory
 ```
 
 ## Configuration
+
+Configuration reference: [Docs](https://gabrimatic.github.io/mcp-prose-memory/reference/configuration/).
 
 Default storage is `~/.mcp-prose-memory/memory.json`. Override it with `MEMORY_PATH`.
 
@@ -111,6 +115,8 @@ The memory file is JSON with arrays of facts per section:
 If the file does not exist, the server starts with an empty document. If the file is invalid JSON, the server fails the operation instead of wiping memory.
 
 ## Tools
+
+Tools reference: [Docs](https://gabrimatic.github.io/mcp-prose-memory/reference/tools/).
 
 ### memory
 

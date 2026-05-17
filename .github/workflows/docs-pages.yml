@@ -1,0 +1,85 @@
+name: Docs Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "doc/**"
+      - "README.md"
+      - ".github/workflows/docs-pages.yml"
+      - "tests/docs-site.test.mjs"
+  pull_request:
+    branches: [main]
+    paths:
+      - "doc/**"
+      - "README.md"
+      - ".github/workflows/docs-pages.yml"
+      - "tests/docs-site.test.mjs"
+  workflow_dispatch:
+
+concurrency:
+  group: docs-pages-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Validate and export docs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install package dependencies
+        run: npm ci
+
+      - name: Run docs guards
+        run: node --test tests/docs-site.test.mjs
+
+      - name: Install Mintlify
+        run: npm install -g mint
+
+      - name: Validate docs
+        working-directory: doc
+        run: mint validate
+
+      - name: Check docs links
+        working-directory: doc
+        run: mint broken-links
+
+      - name: Export docs
+        working-directory: doc
+        run: mint export --output ../docs-export.zip
+
+      - name: Unpack export
+        run: |
+          mkdir _site
+          unzip -q docs-export.zip -d _site
+
+      - name: Prepare for GitHub Pages
+        run: node doc/scripts/prepare-github-pages.mjs _site /mcp-prose-memory
+
+      - name: Configure Pages
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: actions/configure-pages@v6
+
+      - name: Upload Pages artifact
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: Deploy Pages
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: actions/deploy-pages@v4

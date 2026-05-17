@@ -1,0 +1,32 @@
+---
+title: "How it works"
+description: "How the MCP server loads, validates, and writes memory."
+---
+
+`mcp-prose-memory` runs as a stdio MCP server. Clients start it with `npx mcp-prose-memory`, then call the exposed tools over the MCP protocol.
+
+## Runtime flow
+
+1. The client starts the server process.
+2. The server exposes the `memory` and `memory_context` tools.
+3. Each operation loads the current JSON memory file.
+4. Input is validated before any mutation.
+5. Mutations are written to a sibling temp file, synced, and renamed over the target file.
+
+The server does not keep a long-lived in-memory cache. Each operation reads the file so external edits and hook-created files are reflected on the next call.
+
+## Atomic writes
+
+Updates are written through temp-file replacement in the same directory as the target file. This keeps a partial write from replacing the real memory file if the process stops during the write.
+
+The temp file is created with mode `0600`, then renamed to the configured memory path after the write is synced.
+
+## Invalid files
+
+If the memory file does not exist, the server starts from an empty document.
+
+If the memory file exists but is invalid JSON or has an invalid structure, the operation fails. It does not wipe the file or silently replace it with an empty memory.
+
+## Duplicate handling
+
+Duplicate detection is case-insensitive within a section. The same fact can exist in different sections when that is useful, but a section cannot accumulate repeated copies of the same line.

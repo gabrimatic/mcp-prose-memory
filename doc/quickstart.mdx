@@ -1,0 +1,74 @@
+---
+title: "Quickstart"
+description: "Install mcp-prose-memory and connect it to an MCP client."
+---
+
+## Requirements
+
+- Node.js 18 or newer
+- An MCP client that can run a stdio server
+
+## Install
+
+Install globally:
+
+```bash
+npm install -g mcp-prose-memory
+```
+
+Or run it directly with `npx`:
+
+```bash
+npx mcp-prose-memory
+```
+
+## Add the MCP server
+
+Add a server entry to your MCP client config:
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "npx",
+      "args": ["mcp-prose-memory"]
+    }
+  }
+}
+```
+
+Restart the client after saving the config.
+
+## Use a custom memory file
+
+By default, memory is stored at `~/.mcp-prose-memory/memory.json`.
+
+Set `MEMORY_PATH` when you want the memory file somewhere else:
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "npx",
+      "args": ["mcp-prose-memory"],
+      "env": {
+        "MEMORY_PATH": "/path/to/your/memory.json"
+      }
+    }
+  }
+}
+```
+
+## Try the tool
+
+Once connected, call the `memory` tool:
+
+```json
+{"command": "add", "section": "personal", "fact": "Prefers concise answers"}
+```
+
+Then view stored memory:
+
+```json
+{"command": "view"}
+```

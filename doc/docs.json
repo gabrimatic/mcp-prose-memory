@@ -1,0 +1,59 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "mcp-prose-memory",
+  "colors": {
+    "primary": "#2563eb",
+    "light": "#2563eb",
+    "dark": "#60a5fa"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Start",
+        "pages": [
+          "index",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Product",
+        "pages": [
+          "product/how-it-works",
+          "product/memory-model"
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "reference/configuration",
+          "reference/tools",
+          "reference/development"
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/gabrimatic/mcp-prose-memory"
+      },
+      {
+        "label": "npm",
+        "href": "https://www.npmjs.com/package/mcp-prose-memory"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Install",
+      "href": "/quickstart"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/gabrimatic/mcp-prose-memory"
+    }
+  }
+}
