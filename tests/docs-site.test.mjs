@@ -44,5 +44,7 @@ test("CI ignores docs-only changes while docs workflow owns docs checks", async 
     assert.match(docsWorkflow, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
 
+  assert.match(docsWorkflow, /actions\/upload-pages-artifact@v5/);
+  assert.match(docsWorkflow, /actions\/deploy-pages@v5/);
   assert.match(docsWorkflow, /if: github\.event_name == 'push' \|\| github\.event_name == 'workflow_dispatch'/);
 });
