@@ -3,18 +3,28 @@ title: "Memory model"
 description: "Sections, schema, normalization, and limits."
 ---
 
-The memory file is a JSON document with a version, update timestamp, and sectioned arrays of facts.
+The memory file is a JSON document with a version, update timestamp, and sectioned arrays of facts. Facts can be plain strings or compact structured facts.
 
 ```json
 {
-  "version": 4,
+  "version": 5,
   "updated": "2025-01-15T10:30:00.000Z",
   "sections": {
     "work": ["Fact 1", "Fact 2"],
     "personal": ["Lives in Berlin"],
     "top_of_mind": [],
     "history": ["Completed project X"],
-    "instructions": ["Be concise"]
+    "instructions": ["Be concise"],
+    "user_preferences": [
+      {
+        "key": "answer_style",
+        "value": "Prefers concise answers",
+        "confidence": "high",
+        "source": "user_explicit",
+        "createdAt": "2025-01-15T10:30:00.000Z",
+        "updatedAt": "2025-01-15T10:30:00.000Z"
+      }
+    ]
   }
 }
 ```
@@ -28,6 +38,14 @@ The memory file is a JSON document with a version, update timestamp, and section
 | `top_of_mind` | Current focus and active tasks |
 | `history` | Past events and completed work |
 | `instructions` | Standing rules and behavioral preferences |
+| `user_profile` | Stable user profile facts |
+| `user_preferences` | Durable preferences |
+| `eyra_project` | Eyra-specific product and architecture facts |
+| `devices_environment` | Durable local environment facts |
+| `workflows` | Repeated workflow preferences |
+| `writing_style` | Writing and tone preferences |
+| `long_term_tasks` | Durable task context |
+| `do_not_forget` | Explicitly requested durable reminders |
 
 ## Limits
 
@@ -35,6 +53,7 @@ The memory file is a JSON document with a version, update timestamp, and section
 | --- | --- |
 | Facts per section | 30 |
 | Characters per fact | 300 |
+| Characters per structured key | 80 |
 
 ## Normalization
 
@@ -42,6 +61,7 @@ Older or partial documents are normalized when loaded:
 
 - Missing known sections are added as empty arrays
 - Facts are trimmed
+- Structured facts are normalized to compact keys and values
 - A missing `updated` timestamp is replaced with the current time
 - Unknown sections are ignored by the active schema
 

@@ -72,3 +72,15 @@ Then view stored memory:
 ```json
 {"command": "view"}
 ```
+
+For compact assistant memory, use structured facts:
+
+```json
+{"command": "upsert", "section": "user_preferences", "key": "answer_style", "value": "Prefers concise answers"}
+```
+
+For startup context with a small prompt budget:
+
+```json
+{"format": "compact", "sections": ["user_preferences"], "maxChars": 1500}
+```

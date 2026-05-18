@@ -27,6 +27,20 @@ Add a fact to a section.
 {"command": "add", "section": "personal", "fact": "Lives in Berlin"}
 ```
 
+Structured compact facts are accepted when a client needs stable keys:
+
+```json
+{"command": "add", "section": "user_preferences", "key": "answer_style", "value": "Prefers concise answers"}
+```
+
+### `upsert`
+
+Add a structured fact or replace the existing fact with the same key.
+
+```json
+{"command": "upsert", "section": "user_preferences", "key": "answer_style", "value": "Prefers concise and direct answers"}
+```
+
 ### `remove`
 
 Remove a fact by its one-indexed line number within a section.
@@ -45,10 +59,14 @@ Replace a fact by its one-indexed line number within a section.
 
 ## `memory_context`
 
-The `memory_context` tool returns the full formatted memory document. It is intended for session initialization hooks.
+The `memory_context` tool returns memory for session initialization hooks. By default it returns the full formatted memory document. Clients with small context windows can request compact output, section filters, and a maximum character count.
 
 ```json
 {}
+```
+
+```json
+{"format": "compact", "sections": ["user_profile", "user_preferences"], "maxChars": 1500}
 ```
 
 ## Sections
@@ -60,3 +78,11 @@ The valid section keys are:
 - `top_of_mind`
 - `history`
 - `instructions`
+- `user_profile`
+- `user_preferences`
+- `eyra_project`
+- `devices_environment`
+- `workflows`
+- `writing_style`
+- `long_term_tasks`
+- `do_not_forget`

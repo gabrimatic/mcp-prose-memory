@@ -1,6 +1,6 @@
 {
   "name": "mcp-prose-memory",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "MCP server for persistent memory with JSON storage and atomic fact operations",
   "license": "MIT",
   "type": "module",

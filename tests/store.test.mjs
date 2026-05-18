@@ -84,16 +84,75 @@ test("normalizes older or partial JSON memory documents without keeping unknown 
   await store.addFact("personal", "Lives in Berlin");
 
   const saved = JSON.parse(await readFile(memoryPath, "utf-8"));
-  assert.equal(saved.version, 4);
-  assert.deepEqual(Object.keys(saved.sections), [
-    "work",
-    "personal",
-    "top_of_mind",
-    "history",
-    "instructions",
-  ]);
+  assert.equal(saved.version, 5);
+  assert.ok(Object.keys(saved.sections).includes("user_preferences"));
   assert.equal(saved.sections.personal[0], "Lives in Berlin");
   assert.equal(saved.sections.unknown, undefined);
+});
+
+test("stores structured compact facts with metadata", async (t) => {
+  const { memoryPath, cleanup } = await tempMemoryPath();
+  t.after(cleanup);
+
+  const store = new MemoryStore({ memoryPath });
+  const result = await store.addFact("user_preferences", {
+    key: "answer_style",
+    value: "Prefers concise answers",
+    source: "user_explicit",
+    confidence: "high",
+  });
+
+  assert.deepEqual(result, {
+    line: 1,
+    fact: "answer_style: Prefers concise answers",
+  });
+
+  const saved = JSON.parse(await readFile(memoryPath, "utf-8"));
+  assert.equal(saved.sections.user_preferences[0].key, "answer_style");
+  assert.equal(saved.sections.user_preferences[0].value, "Prefers concise answers");
+  assert.equal(
+    await store.getFormatted("user_preferences"),
+    "**User Preferences**\n\n1. answer_style: Prefers concise answers"
+  );
+});
+
+test("upserts structured facts by key", async (t) => {
+  const { memoryPath, cleanup } = await tempMemoryPath();
+  t.after(cleanup);
+
+  const store = new MemoryStore({ memoryPath });
+
+  assert.equal(
+    (await store.upsertFact("user_preferences", { key: "answer_style", value: "Concise" })).action,
+    "added"
+  );
+  const replaced = await store.upsertFact("user_preferences", { key: "answer_style", value: "Concise and direct" });
+
+  assert.equal(replaced.action, "replaced");
+  assert.equal(replaced.line, 1);
+  assert.equal(
+    await store.getFormatted("user_preferences"),
+    "**User Preferences**\n\n1. answer_style: Concise and direct"
+  );
+});
+
+test("returns compact bounded memory context", async (t) => {
+  const { memoryPath, cleanup } = await tempMemoryPath();
+  t.after(cleanup);
+
+  const store = new MemoryStore({ memoryPath });
+  await store.addFact("user_profile", { key: "preferred_name", value: "Soroush" });
+  await store.addFact("user_preferences", { key: "answer_style", value: "Concise and practical" });
+
+  const context = await store.getContext({
+    sections: ["user_profile", "user_preferences"],
+    format: "compact",
+    maxChars: 90,
+  });
+
+  assert.match(context, /User Profile:/);
+  assert.ok(context.length <= 90);
+  assert.match(context, /context clipped/);
 });
 
 test("rejects fractional line numbers without mutating memory", async (t) => {

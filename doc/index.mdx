@@ -11,11 +11,12 @@ It stores memory as JSON, keeps facts grouped by section, and exposes one tool f
 
 - Stores memory in a local JSON file
 - Groups facts into stable sections
+- Stores compact key/value facts when clients need structured memory
 - Writes atomically through temp-file replacement
 - Rejects duplicate facts within a section
 - Validates line numbers before remove and replace operations
 - Normalizes older or partial memory documents
-- Exposes a full memory context tool for session startup hooks
+- Exposes compact, budgeted memory context for session startup hooks
 
 ## When to use it
 
@@ -25,7 +26,7 @@ It works best for short durable facts: project context, standing preferences, cu
 
 ## Limits
 
-Each section can hold up to 30 facts. Each fact can be up to 300 characters.
+Each section can hold up to 30 facts. Each fact can be up to 300 characters. Structured fact keys can be up to 80 characters.
 
 Those limits are intentional. They keep the memory useful as compact context rather than turning it into an unbounded journal.
 

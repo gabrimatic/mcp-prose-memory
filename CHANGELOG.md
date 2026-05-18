@@ -4,6 +4,20 @@ This changelog tracks notable `mcp-prose-memory` changes.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [3.1.0] - 2026-05-18
+
+### Added
+
+- Added structured compact facts with `key`, `value`, `source`, and `confidence` fields while preserving plain prose facts.
+- Added the `upsert` memory command so clients can replace a structured fact by key instead of accumulating duplicates.
+- Added compact, section-filtered, character-budgeted `memory_context` output for small local-model prompt windows.
+- Added memory sections for local assistant use cases: `user_profile`, `user_preferences`, `eyra_project`, `devices_environment`, `workflows`, `writing_style`, `long_term_tasks`, and `do_not_forget`.
+
+### Changed
+
+- Raised the memory document schema version to 5.
+- Kept the existing 30 facts per section and 300 characters per fact limit, with an additional 80 character limit for structured keys.
+
 ## [3.0.0] - 2026-05-12
 
 ### Added

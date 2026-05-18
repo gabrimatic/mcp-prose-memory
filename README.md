@@ -15,13 +15,15 @@ It is built for memory that should survive restarts without becoming a loose tex
 ## Features
 
 - JSON memory storage with a stable schema
+- Compact structured facts with optional `key`, `value`, `source`, and `confidence`
 - Atomic writes through temp-file replacement
 - Atomic fact operations: add, remove, replace, view
-- Sectioned context organization
+- Sectioned context organization for general clients and local assistant memory
 - Case-insensitive duplicate detection
 - Strict line-number validation for remove and replace
 - Automatic normalization for older or partial JSON documents
-- Limits: 30 facts per section, 300 characters per fact
+- Compact `memory_context` output with section and character-budget filters
+- Limits: 30 facts per section, 300 characters per fact, 80 characters per structured key
 - Configurable storage path via environment variable
 
 ## Installation
@@ -100,14 +102,24 @@ The memory file is JSON with arrays of facts per section:
 
 ```json
 {
-  "version": 4,
+  "version": 5,
   "updated": "2025-01-15T10:30:00.000Z",
   "sections": {
     "work": ["Fact 1", "Fact 2"],
     "personal": ["Lives in Berlin", "Prefers dark mode"],
     "top_of_mind": [],
     "history": ["Completed project X"],
-    "instructions": ["Be concise"]
+    "instructions": ["Be concise"],
+    "user_preferences": [
+      {
+        "key": "answer_style",
+        "value": "Prefers concise answers",
+        "confidence": "high",
+        "source": "user_explicit",
+        "createdAt": "2025-01-15T10:30:00.000Z",
+        "updatedAt": "2025-01-15T10:30:00.000Z"
+      }
+    ]
   }
 }
 ```
@@ -141,6 +153,20 @@ Add a fact to a section.
 {"command": "add", "section": "personal", "fact": "Lives in Berlin"}
 ```
 
+Structured compact facts are also supported:
+
+```json
+{"command": "add", "section": "user_preferences", "key": "answer_style", "value": "Prefers concise answers"}
+```
+
+#### upsert
+
+Add a structured fact or replace the existing fact with the same key.
+
+```json
+{"command": "upsert", "section": "user_preferences", "key": "answer_style", "value": "Prefers concise and direct answers"}
+```
+
 #### remove
 
 Remove a fact by line number.
@@ -159,10 +185,14 @@ Update a fact by line number.
 
 ### memory_context
 
-Returns the full memory document for session initialization. Called automatically by hooks.
+Returns memory for session initialization. Clients can request compact bounded context.
 
 ```json
 {}
+```
+
+```json
+{"format": "compact", "sections": ["user_profile", "user_preferences"], "maxChars": 1500}
 ```
 
 ## Sections
@@ -174,6 +204,14 @@ Returns the full memory document for session initialization. Called automaticall
 | `top_of_mind` | Current focus, active tasks |
 | `history` | Past events, completed work |
 | `instructions` | Standing rules, behavioral preferences |
+| `user_profile` | Stable user profile facts |
+| `user_preferences` | Durable preferences |
+| `eyra_project` | Eyra-specific product and architecture facts |
+| `devices_environment` | Durable local environment facts |
+| `workflows` | Repeated workflow preferences |
+| `writing_style` | Writing and tone preferences |
+| `long_term_tasks` | Durable task context |
+| `do_not_forget` | Explicitly requested durable reminders |
 
 ## Development
 
