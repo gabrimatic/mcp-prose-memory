@@ -1,11 +1,19 @@
 {
-  "version": 4,
+  "version": 5,
   "updated": "",
   "sections": {
     "work": [],
     "personal": [],
     "top_of_mind": [],
     "history": [],
-    "instructions": []
+    "instructions": [],
+    "user_profile": [],
+    "user_preferences": [],
+    "eyra_project": [],
+    "devices_environment": [],
+    "workflows": [],
+    "writing_style": [],
+    "long_term_tasks": [],
+    "do_not_forget": []
   }
 }
