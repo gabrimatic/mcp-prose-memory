@@ -5,10 +5,13 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import { createRequire } from "node:module";
 import { MemoryStore, SECTIONS } from "./store.js";
 
+const { version: SERVER_VERSION } = createRequire(import.meta.url)("../package.json") as {
+  version: string;
+};
 const store = new MemoryStore();
-const SERVER_VERSION = "3.1.0";
 
 const server = new Server(
   { name: "mcp-prose-memory", version: SERVER_VERSION },
@@ -74,7 +77,7 @@ Examples:
         properties: {
           command: {
             type: "string",
-            enum: ["view", "add", "upsert", "remove", "replace"],
+            enum: [...COMMANDS],
             description: "Operation to perform",
           },
           section: {
