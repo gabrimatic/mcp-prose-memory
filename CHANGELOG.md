@@ -4,6 +4,18 @@ This changelog tracks notable `mcp-prose-memory` changes.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [3.1.1] - 2026-10-15
+
+### Changed
+
+- Updated the MCP SDK to 1.32.1 and refreshed the dependency tree, clearing the open `hono`, `ip-address`, `qs`, `fast-uri`, and `body-parser` advisories from the production audit.
+- Built with TypeScript 7 and Node 26 type definitions. Node 18 or newer is still supported.
+- The server now reports its version from `package.json`, so the MCP handshake version always matches the installed package.
+
+### Fixed
+
+- Updated `templates/memory.json` to the version 5 schema with all 13 memory sections.
+
 ## [3.1.0] - 2026-05-18
 
 ### Added
