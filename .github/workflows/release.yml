@@ -43,7 +43,7 @@ jobs:
 
       - name: Check tag matches package version
         run: |
-          node -e "const tag = process.env.RELEASE_TAG.replace(/^v/, ''); const pkg = require('./package.json'); if (pkg.version !== tag) { throw new Error(`Tag v${tag} does not match package version ${pkg.version}`); }"
+          node -e 'const tag = process.env.RELEASE_TAG.replace(/^v/, ""); const pkg = require("./package.json"); if (pkg.version !== tag) throw new Error("Tag v" + tag + " does not match package version " + pkg.version);'
         env:
           RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
