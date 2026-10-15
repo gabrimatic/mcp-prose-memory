@@ -5,8 +5,10 @@ description: "Install mcp-prose-memory and connect it to an MCP client."
 
 ## Requirements
 
-- Node.js 18 or newer
+- Node.js 18 or newer (20 or newer recommended, since Node 18 is end-of-life)
 - An MCP client that can run a stdio server
+
+On Node 18, npm prints an `EBADENGINE` warning for `@hono/node-server`, a dependency of the MCP SDK's HTTP transport that this stdio server never loads. The warning is harmless, but installs with `engine-strict=true` (or Yarn 1) need Node 20 or newer, or engine checks turned off.
 
 ## Install
 

@@ -11,7 +11,7 @@ npm ci
 npm test
 ```
 
-Runtime: **Node >= 18**.
+Runtime: **Node >= 18**. On Node 18, `npm ci` prints an `EBADENGINE` warning for `@hono/node-server`, which only the MCP SDK's HTTP transport loads; the stdio server never imports it.
 
 ## Architecture
 

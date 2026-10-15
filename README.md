@@ -10,7 +10,7 @@ Persistent memory for MCP clients.
 
 It is built for memory that should survive restarts without becoming a loose text file that slowly drifts out of shape.
 
-[Docs](https://gabrimatic.github.io/mcp-prose-memory/) · Changelog · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
+[Docs](https://gabrimatic.github.io/mcp-prose-memory/) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
 
 ## Features
 
@@ -30,7 +30,7 @@ It is built for memory that should survive restarts without becoming a loose tex
 
 Full setup guide: [Docs](https://gabrimatic.github.io/mcp-prose-memory/quickstart/).
 
-Runtime: **Node >= 18**.
+Runtime: **Node >= 18**. Node 20 or newer is recommended, since Node 18 is end-of-life. On Node 18, npm prints an `EBADENGINE` warning for `@hono/node-server`, a dependency of the MCP SDK's HTTP transport that this stdio server never loads. The warning is harmless, but installs with `engine-strict=true` (or Yarn 1) need Node 20+ or engine checks turned off.
 
 ```bash
 npm install -g mcp-prose-memory
